@@ -16,7 +16,8 @@ import hashlib
 from datetime import datetime
 import csv
 from google_credentials_helper import GoogleCredentialHelper
-from config import GOOGLE_SHEET_KEY, INCLUDE_TYPES, SHEET_COLUMNS
+from config import GOOGLE_SHEET_KEY, INCLUDE_TYPES, SHEET_COLUMNS, \
+    DELETE_ON_KINDLE_AFTER_UPLOAD
 import re
 import os
 import io
@@ -32,8 +33,6 @@ class PushClippings(object):
     CSV_OUTPUT_DIR = "output"
     SAVE_CSV_BACKUP = True
     DO_UPLOAD = True
-    DELETE_ON_KINDLE_AFTER_UPLOAD = False
-
     KINDLE_NOTE_SEP = "=========="
 
     def __init__(self, file_override=None):
@@ -138,12 +137,19 @@ class PushClippings(object):
                 note['id'] = hash
                 writer.writerow(note)
 
+    def remove_source(self):
+        print "Deleting %s..." % self.source_file
+        os.remove(self.source_file)
+        print "Deleted."
+
     def run(self):
         raw_notes = self.load_notes_from_kindle()
         processed_notes = self.process_notes(raw_notes)
         self.push_to_gdrive(processed_notes)
         if self.SAVE_CSV_BACKUP:
             self.save_csv(processed_notes)
+        if DELETE_ON_KINDLE_AFTER_UPLOAD:
+            self.remove_source()
         print "Done!"
 
 
