@@ -1,0 +1,8 @@
+unittest
+re
+PyDrive
+csv
+httplib2
+hashlib
+google_api_python_client==1.5.1
+oauth2client

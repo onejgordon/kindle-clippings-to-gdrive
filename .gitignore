@@ -1,0 +1,5 @@
+client_secret.json
+config.py
+*.csv
+*.pyc
+credentials.dat
