@@ -27,7 +27,12 @@ Create an oauth2 credential, and download the client_secret.json file to the mai
 
 ### Create your Spreadsheet
 
-Create a Google Sheet with headers for quote, source (text), and date added.
+Create a Google Sheet.
+If you don't update the config, the sheet expects headers:
+
+`Id`, `Type`, `Quote`, `Source`, `Location`, `Date`
+
+### Update configuration
 
 Copy config.template.py to config.py and update constants:
 

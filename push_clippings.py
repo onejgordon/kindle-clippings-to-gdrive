@@ -56,9 +56,13 @@ class PushClippings(object):
 
     def load_notes_from_kindle(self):
         data = None
-        with io.open(self.source_file, mode="r", encoding="utf8") as f:
-            data = f.read()
-        print "Loaded data, length: %d" % len(data)
+        try:
+            with io.open(self.source_file, mode="r", encoding="utf8") as f:
+                data = f.read()
+        except IOError, e:
+            print "Cant find source - Kindle not plugged in?"
+        else:
+            print "Loaded data, length: %d" % len(data)
         return data
 
     def process_notes(self, raw):
@@ -117,7 +121,7 @@ class PushClippings(object):
                         valueInputOption="RAW",
                         insertDataOption="INSERT_ROWS", body=body).execute()
                     if result:
-                        print "Updated %s row(s)!" % result.get('updatedRows', "?")
+                        print "Updated %s row(s)!" % result.get('updates', {}).get('updatedRows', "?")
                 else:
                     print "Nothing to put"
 
