@@ -17,13 +17,15 @@ from datetime import datetime
 import csv
 from google_credentials_helper import GoogleCredentialHelper
 from config import GOOGLE_SHEET_KEY, INCLUDE_TYPES, SHEET_COLUMNS, \
-    DELETE_ON_KINDLE_AFTER_UPLOAD
+    DELETE_ON_KINDLE_AFTER_UPLOAD, TARGET
 import re
 import os
 import io
 import sys
 import getopt
 import util
+import requests
+import base64
 
 
 class PushClippings(object):
@@ -124,6 +126,34 @@ class PushClippings(object):
                 else:
                     print "Nothing to put"
 
+    def save_to_flow(self, processed_notes):
+        print "Uploading clippings to Flow Dashboard..."
+        successful = 0
+        from config import FLOW_USER_ID, FLOW_USER_PW
+        encoded = base64.b64encode("%s:%s" % (FLOW_USER_ID, FLOW_USER_PW))
+        headers = {"authorization": "Basic %s" % encoded}
+        for hash, note in processed_notes.items():
+            _type = note.get('type', '')
+            if _type.lower() in INCLUDE_TYPES:
+                params = {
+                    'source': note.get('source'),
+                    'content': note.get('quote'),
+                    'location': note.get('location'),
+                    'date': note.get('date')
+                }
+                r = requests.post("http://flowdash.co/api/quote",
+                                  params=params,
+                                  headers=headers)
+                if r.status_code == 200:
+                    res = r.json()
+                    if res and res.get('success'):
+                        successful += 1
+                        q = res.get('quote')
+                        if q:
+                            print "Successfully uploaded quote with id " % q.get('id')
+        print "Updated %s row(s)!" % successful
+
+
     def save_csv(self, notes):
         directory = self.CSV_OUTPUT_DIR
         if not os.path.exists(directory):
@@ -145,7 +175,10 @@ class PushClippings(object):
     def run(self):
         raw_notes = self.load_notes_from_kindle()
         processed_notes = self.process_notes(raw_notes)
-        self.push_to_gdrive(processed_notes)
+        if TARGET == "gsheet":
+            self.push_to_gdrive(processed_notes)
+        elif TARGET == "flow":
+            self.save_to_flow(processed_notes)
         if self.SAVE_CSV_BACKUP:
             self.save_csv(processed_notes)
         if DELETE_ON_KINDLE_AFTER_UPLOAD:
