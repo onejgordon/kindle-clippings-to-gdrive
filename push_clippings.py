@@ -44,15 +44,16 @@ class PushClippings(object):
     def _parse_note(self, raw):
         res = None
         raw = util._normalize_to_ascii(raw)
-        pattern = r"(?P<source>.*)\n- Your (?P<type>[a-zA-Z]{4,10}) on (?P<location>.*) \| Added on (?P<date>.*)\n\n(?P<quote>.*)"
-        match = re.search(pattern, raw, flags=re.M)
-        if match:
-            res = match.groupdict()
-            raw_date = res.get('date')
-            if raw_date:
-                res['date'] = util.print_datetime(util.parse_kindle_time(raw_date))
-        else:
-            print "No match"
+        if raw:
+            pattern = r"(?P<source>.*)\n- Your (?P<type>[a-zA-Z]{4,10}) on (?P<location>.*) \| Added on (?P<date>.*)\n\n(?P<quote>.*)"
+            match = re.search(pattern, raw, flags=re.M)
+            if match:
+                res = match.groupdict()
+                raw_date = res.get('date')
+                if raw_date:
+                    res['date'] = util.print_datetime(util.parse_kindle_time(raw_date))
+            else:
+                print "No pattern match in note"
         return res
 
     def load_notes_from_kindle(self):
@@ -135,11 +136,14 @@ class PushClippings(object):
         for hash, note in processed_notes.items():
             _type = note.get('type', '')
             if _type.lower() in INCLUDE_TYPES:
+                date = note.get('date')
+                if date:
+                    date = util.iso_date(date)
                 params = {
                     'source': note.get('source'),
                     'content': note.get('quote'),
                     'location': note.get('location'),
-                    'date': note.get('date')
+                    'date': date
                 }
                 r = requests.post("http://flowdash.co/api/quote",
                                   params=params,
@@ -150,7 +154,7 @@ class PushClippings(object):
                         successful += 1
                         q = res.get('quote')
                         if q:
-                            print "Successfully uploaded quote with id " % q.get('id')
+                            print "Successfully uploaded quote to Flow with id %s" % q.get('id')
         print "Updated %s row(s)!" % successful
 
 
@@ -174,16 +178,17 @@ class PushClippings(object):
 
     def run(self):
         raw_notes = self.load_notes_from_kindle()
-        processed_notes = self.process_notes(raw_notes)
-        if TARGET == "gsheet":
-            self.push_to_gdrive(processed_notes)
-        elif TARGET == "flow":
-            self.save_to_flow(processed_notes)
-        if self.SAVE_CSV_BACKUP:
-            self.save_csv(processed_notes)
-        if DELETE_ON_KINDLE_AFTER_UPLOAD:
-            self.remove_source()
-        print "Done!"
+        if raw_notes:
+            processed_notes = self.process_notes(raw_notes)
+            if TARGET == "gsheet":
+                self.push_to_gdrive(processed_notes)
+            elif TARGET == "flow":
+                self.save_to_flow(processed_notes)
+            if self.SAVE_CSV_BACKUP:
+                self.save_csv(processed_notes)
+            if DELETE_ON_KINDLE_AFTER_UPLOAD:
+                self.remove_source()
+        print "Done"
 
 
 if __name__ == "__main__":
