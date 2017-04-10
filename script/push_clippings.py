@@ -17,7 +17,7 @@ from datetime import datetime
 import csv
 from google_credentials_helper import GoogleCredentialHelper
 from config import GOOGLE_SHEET_KEY, INCLUDE_TYPES, SHEET_COLUMNS, \
-    DELETE_ON_KINDLE_AFTER_UPLOAD, TARGET
+    TARGET
 import re
 import os
 import io
@@ -35,6 +35,7 @@ class PushClippings(object):
     CSV_OUTPUT_DIR = "output"
     SAVE_CSV_BACKUP = True
     DO_UPLOAD = True
+    DELETE_ON_KINDLE_AFTER_UPLOAD = True
     KINDLE_NOTE_SEP = "=========="
 
     def __init__(self, file_override=None):
@@ -51,7 +52,7 @@ class PushClippings(object):
                 res = match.groupdict()
                 raw_date = res.get('date')
                 if raw_date:
-                    res['date'] = util.print_datetime(util.parse_kindle_time(raw_date))
+                    res['date'] = util.parse_kindle_time(raw_date)
             else:
                 print "No pattern match in note"
         return res
@@ -128,34 +129,35 @@ class PushClippings(object):
                     print "Nothing to put"
 
     def save_to_flow(self, processed_notes):
-        print "Uploading clippings to Flow Dashboard..."
-        successful = 0
-        from config import FLOW_USER_ID, FLOW_USER_PW
-        encoded = base64.b64encode("%s:%s" % (FLOW_USER_ID, FLOW_USER_PW))
-        headers = {"authorization": "Basic %s" % encoded}
-        for hash, note in processed_notes.items():
-            _type = note.get('type', '')
-            if _type.lower() in INCLUDE_TYPES:
-                date = note.get('date')
-                if date:
-                    date = util.iso_date(date)
-                params = {
-                    'source': note.get('source'),
-                    'content': note.get('quote'),
-                    'location': note.get('location'),
-                    'date': date
-                }
-                r = requests.post("http://flowdash.co/api/quote",
-                                  params=params,
-                                  headers=headers)
-                if r.status_code == 200:
-                    res = r.json()
-                    if res and res.get('success'):
-                        successful += 1
-                        q = res.get('quote')
-                        if q:
-                            print "Successfully uploaded quote to Flow with id %s" % q.get('id')
-        print "Updated %s row(s)!" % successful
+        if self.DO_UPLOAD:
+            print "Uploading clippings to Flow Dashboard..."
+            successful = 0
+            from config import FLOW_USER_ID, FLOW_USER_PW
+            encoded = base64.b64encode("%s:%s" % (FLOW_USER_ID, FLOW_USER_PW))
+            headers = {"authorization": "Basic %s" % encoded}
+            for hash, note in processed_notes.items():
+                _type = note.get('type', '')
+                if _type.lower() in INCLUDE_TYPES:
+                    date = note.get('date')
+                    if date:
+                        date = util.iso_date(date)
+                    params = {
+                        'source': note.get('source'),
+                        'content': note.get('quote'),
+                        'location': note.get('location'),
+                        'date': date
+                    }
+                    r = requests.post("http://flowdash.co/api/quote",
+                                      params=params,
+                                      headers=headers)
+                    if r.status_code == 200:
+                        res = r.json()
+                        if res and res.get('success'):
+                            successful += 1
+                            q = res.get('quote')
+                            if q:
+                                print "Successfully uploaded quote to Flow with id %s" % q.get('id')
+            print "Updated %s row(s)!" % successful
 
 
     def save_csv(self, notes):
@@ -186,7 +188,7 @@ class PushClippings(object):
                 self.save_to_flow(processed_notes)
             if self.SAVE_CSV_BACKUP:
                 self.save_csv(processed_notes)
-            if DELETE_ON_KINDLE_AFTER_UPLOAD:
+            if self.DELETE_ON_KINDLE_AFTER_UPLOAD:
                 self.remove_source()
         print "Done"
 

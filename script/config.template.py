@@ -17,4 +17,3 @@ SHEET_COLUMNS = {
     'location': 4,
     'date': 5
 }
-DELETE_ON_KINDLE_AFTER_UPLOAD = False
