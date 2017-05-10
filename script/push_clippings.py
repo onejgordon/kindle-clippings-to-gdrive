@@ -132,8 +132,8 @@ class PushClippings(object):
         if self.DO_UPLOAD:
             print "Uploading clippings to Flow Dashboard..."
             successful = 0
-            from config import FLOW_USER_ID, FLOW_USER_PW
-            encoded = base64.b64encode("%s:%s" % (FLOW_USER_ID, FLOW_USER_PW))
+            from config import FLOW_USER_EMAIL, FLOW_USER_PW
+            encoded = base64.b64encode("%s:%s" % (FLOW_USER_EMAIL, FLOW_USER_PW))
             headers = {"authorization": "Basic %s" % encoded}
             for hash, note in processed_notes.items():
                 _type = note.get('type', '')

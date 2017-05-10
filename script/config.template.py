@@ -4,11 +4,11 @@
 Configuration settings
 '''
 
-TARGET = "gsheets"  # Or "flow" via http://flowdash.co
-FLOW_USER_ID = 0
+TARGET = "gsheet"  # in ["flow", "gsheet"]
+FLOW_USER_EMAIL = ""
 FLOW_USER_PW = ""
 GOOGLE_SHEET_KEY = ""
-INCLUDE_TYPES = ['highlight'] # ['note', 'bookmark']
+INCLUDE_TYPES = ['highlight']  # ['note', 'bookmark']
 SHEET_COLUMNS = {
     'hash': 0,
     'type': 1,
