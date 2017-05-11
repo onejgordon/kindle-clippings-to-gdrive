@@ -28,3 +28,7 @@ def parse_kindle_time(raw):
 
 def print_datetime(dt):
     return datetime.strftime(dt, '%Y-%m-%d %H:%M:%S')
+
+
+def iso_date(dt):
+    return datetime.strftime(dt, '%Y-%m-%d')

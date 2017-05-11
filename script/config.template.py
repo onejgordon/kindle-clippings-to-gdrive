@@ -4,8 +4,11 @@
 Configuration settings
 '''
 
+TARGET = "gsheet"  # in ["flow", "gsheet"]
+FLOW_USER_EMAIL = ""
+FLOW_USER_PW = ""
 GOOGLE_SHEET_KEY = ""
-INCLUDE_TYPES = ['highlight'] # ['note', 'bookmark']
+INCLUDE_TYPES = ['highlight']  # ['note', 'bookmark']
 SHEET_COLUMNS = {
     'hash': 0,
     'type': 1,
@@ -14,4 +17,3 @@ SHEET_COLUMNS = {
     'location': 4,
     'date': 5
 }
-DELETE_ON_KINDLE_AFTER_UPLOAD = False

@@ -1,7 +1,7 @@
 # Kindle Notes to GDrive
 
 A Python script to load clippings/notes/highlights from a Kindle (connected via USB)
-and save to a Google Sheet.
+and save to a Google Sheet (or [Flow Dashboard](https://flowdash.co)).
 
 While https://kindle.amazon.com/your_highlights works well for purchased books, it doesn't include highlights/notes from PDFs and articles loaded onto the Kindle. Notes are saved as a .txt file on the device, but it's much more useful to collect them in a spreadsheet. This script makes it easy to automate this process.
 
