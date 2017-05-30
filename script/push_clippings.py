@@ -17,7 +17,8 @@ from datetime import datetime
 import csv
 from google_credentials_helper import GoogleCredentialHelper
 from config import GOOGLE_SHEET_KEY, INCLUDE_TYPES, SHEET_COLUMNS, \
-    TARGET
+    TARGET, DELETE_ON_KINDLE_AFTER_UPLOAD, DO_UPLOAD, SAVE_CSV_BACKUP, \
+    DIRECTORY, NOTES_FILE, CSV_OUTPUT_DIR, KINDLE_NOTE_SEP
 import re
 import os
 import io
@@ -30,17 +31,9 @@ import base64
 
 class PushClippings(object):
 
-    DIRECTORY = "/Volumes/Kindle/documents/"
-    NOTES_FILE = "My Clippings.txt"
-    CSV_OUTPUT_DIR = "output"
-    SAVE_CSV_BACKUP = True
-    DO_UPLOAD = True
-    DELETE_ON_KINDLE_AFTER_UPLOAD = True
-    KINDLE_NOTE_SEP = "=========="
-
     def __init__(self, file_override=None):
         self.source_file = file_override if file_override else \
-            self.DIRECTORY + self.NOTES_FILE
+            DIRECTORY + NOTES_FILE
 
     def _parse_note(self, raw):
         res = None
@@ -70,7 +63,7 @@ class PushClippings(object):
 
     def process_notes(self, raw):
         processed = {}
-        for i, raw_note in enumerate(raw.split(self.KINDLE_NOTE_SEP)):
+        for i, raw_note in enumerate(raw.split(KINDLE_NOTE_SEP)):
             note = self._parse_note(raw_note)
             if note:
                 m = hashlib.md5(note.get('quote'))
@@ -97,7 +90,7 @@ class PushClippings(object):
                 n_rows = len(rows) - 1
                 if n_rows > 0:
                     existing_hashes = rows[1:]
-            if self.DO_UPLOAD:
+            if DO_UPLOAD:
                 print "Uploading missing clippings to Google Drive..."
                 put_values = []
                 for hash, note in processed_notes.items():
@@ -129,7 +122,7 @@ class PushClippings(object):
                     print "Nothing to put"
 
     def save_to_flow(self, processed_notes):
-        if self.DO_UPLOAD:
+        if DO_UPLOAD:
             print "Uploading clippings to Flow Dashboard..."
             successful = 0
             from config import FLOW_USER_EMAIL, FLOW_USER_PW
@@ -161,7 +154,7 @@ class PushClippings(object):
 
 
     def save_csv(self, notes):
-        directory = self.CSV_OUTPUT_DIR
+        directory = CSV_OUTPUT_DIR
         if not os.path.exists(directory):
             os.makedirs(directory)
         fname = "kindle-notes-loaded-%s.csv" % \
