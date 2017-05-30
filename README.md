@@ -17,7 +17,15 @@ Python 2.7
 pip install -r requirements.txt
 ```
 
-### Create a Google API project
+### Setup for pushing notes to [Flow](https://flowdash.co)
+
+1. Sign in to Flow
+2. Go to settings -> advanced, and set an API password
+3. Copy config.template.py to config.py and update constants `FLOW_USER_EMAIL` and `FLOW_USER_PW`
+
+### Setting up for pushing notes to a Google Spreadsheet
+
+#### Create a Google API project
 
 You'll need Google API project to authenticate the calls to Google Sheets.
 
@@ -25,14 +33,14 @@ Go to https://console.developers.google.com to create your project.
 
 Create an oauth2 credential, and download the client_secret.json file to the main directory.
 
-### Create your Spreadsheet
+#### Create your Spreadsheet
 
 Create a Google Sheet.
 If you don't update the config, the sheet expects headers:
 
 `Id`, `Type`, `Quote`, `Source`, `Location`, `Date`
 
-### Update configuration
+#### Update configuration
 
 Copy config.template.py to config.py and update constants:
 
