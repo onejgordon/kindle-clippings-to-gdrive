@@ -1,4 +1,5 @@
 PyDrive
 httplib2
 google_api_python_client==1.5.1
+oauth2client==2.2.0
 requests
