@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from os import sys, path
-sys.path.append(path.dirname(path.dirname(__file__)))
 import samples
-from push_clippings import PushClippings
-import util
+from script import config, util
+from script.push_clippings import PushClippings
 
 
 class PushTests(unittest.TestCase):
-
     def test_parsing_dates(self):
         volley = [
             ('Friday, April 22, 2016 1:43:50 AM', '2016-04-22 01:43:50'),
@@ -53,17 +50,18 @@ class PushTests(unittest.TestCase):
             self.assertEqual(source, result.get('source'))
             self.assertEqual(type, result.get('type'))
             self.assertEqual(location, result.get('location'))
-            self.assertEqual(date, result.get('date'))
+            self.assertEqual(date, str(result.get('date')))
             self.assertTrue(len(result.get('quote')) > 0)
 
     def test_parsing_raw(self):
         raw = samples.RAW
         push = PushClippings()
-        raw_split = raw.split(PushClippings.KINDLE_NOTE_SEP)
-        self.assertEqual(len(raw_split), 86)
+        raw_split = raw.split(config.KINDLE_NOTE_SEP)
+        self.assertEqual(len(raw_split), 85)
 
         first_parsed = push._parse_note(raw_split[0])
         self.assertIsNotNone(first_parsed)
+
 
 if __name__ == '__main__':
     unittest.main()

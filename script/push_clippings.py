@@ -30,7 +30,6 @@ import base64
 
 
 class PushClippings(object):
-
     def __init__(self, file_override=None):
         self.source_file = file_override if file_override else \
             DIRECTORY + NOTES_FILE
@@ -109,7 +108,7 @@ class PushClippings(object):
                             put_values.append(row)
                 if put_values:
                     body = {
-                      'values': put_values
+                        'values': put_values
                     }
                     result = service.spreadsheets().values().append(
                         spreadsheetId=GOOGLE_SHEET_KEY,
@@ -152,13 +151,12 @@ class PushClippings(object):
                                 print "Successfully uploaded quote to Flow with id %s" % q.get('id')
             print "Updated %s row(s)!" % successful
 
-
     def save_csv(self, notes):
         directory = CSV_OUTPUT_DIR
         if not os.path.exists(directory):
             os.makedirs(directory)
         fname = "kindle-notes-loaded-%s.csv" % \
-            datetime.strftime(datetime.now(), "%Y-%m-%d-%H:%M")
+                datetime.strftime(datetime.now(), "%Y-%m-%d-%H:%M")
         with open(directory + '/' + fname, 'w+') as f:
             writer = csv.DictWriter(f, fieldnames=['id', 'type', 'quote', 'source', 'location', 'date'])
             writer.writeheader()
@@ -205,4 +203,3 @@ if __name__ == "__main__":
 
     push = PushClippings(file_override=file_override)
     push.run()
-
