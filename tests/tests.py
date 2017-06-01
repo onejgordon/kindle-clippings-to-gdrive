@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-
+import os
 import unittest
+from datetime import datetime
+from script.config import CSV_OUTPUT_DIR
 import samples
 import clippings
 from script import config, util
@@ -75,6 +77,11 @@ class PushTests(unittest.TestCase):
         # Need to copy here
         clip_datas = self._get_clip_datas()
         push.save_csv(clip_datas[0])
+        file_name = CSV_OUTPUT_DIR + "\kindle-notes-loaded-%s.csv" % datetime.strftime(datetime.now(), "%Y-%m-%d-%H-%M")
+
+        assert (os.path.isfile(file_name), "CSV not saved correctly.")
+        assert (os.path.getsize(file_name) > 0, "CSV saved but empty.")
+
 
 
 if __name__ == '__main__':

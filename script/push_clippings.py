@@ -136,16 +136,17 @@ class PushClippings(object):
 
     def save_csv(self, notes):
         directory = CSV_OUTPUT_DIR
+
         if not os.path.exists(directory):
             os.makedirs(directory)
-        fname = "kindle-notes-loaded-%s.csv" % \
-                datetime.strftime(datetime.now(), "%Y-%m-%d-%H:%M")
-        with open("Kindle.csv", 'w+') as f:
-            writer = csv.DictWriter(f, fieldnames=['id', 'type', 'quote', 'source', 'location', 'date']
-                                    , extrasaction='ignore')
+
+        file_name = directory + "\kindle-notes-loaded-%s.csv" % datetime.strftime(datetime.now(), "%Y-%m-%d-%H-%M")
+        with open(file_name, 'w+') as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=['id', 'type', 'quote', 'source', 'location', 'date'],
+                                    extrasaction='ignore')
             writer.writeheader()
-            for hash, note in notes.items():
-                note['id'] = hash
+            for md5_hash, note in notes.items():
+                note['id'] = md5_hash
                 note['type'] = note["meta"]["type"]
                 note['quote'] = note["content"]
                 note['source'] = note["title"] + " (" + note["author"] + ")"
@@ -155,7 +156,7 @@ class PushClippings(object):
                     note['location'] = str(note["meta"]["location"])
                 note['date'] = str(note["added_on"])
                 writer.writerow(note)
-            f.close()
+            csv_file.close()
 
     def remove_source(self):
         print "Deleting %s..." % self.source_file
