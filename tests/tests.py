@@ -73,12 +73,8 @@ class PushTests(unittest.TestCase):
 
     def test_CSV(self):
         # Need to copy here
-        saveable_data = []
         clip_datas = self._get_clip_datas()
-        for clip_data in clip_datas:
-            for key, val in clip_data.items():
-                saveable_data.append({key: val})
-        push.save_csv(saveable_data)
+        push.save_csv(clip_datas[0])
 
 
 if __name__ == '__main__':

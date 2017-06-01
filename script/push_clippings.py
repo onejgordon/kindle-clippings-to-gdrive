@@ -140,7 +140,7 @@ class PushClippings(object):
             os.makedirs(directory)
         fname = "kindle-notes-loaded-%s.csv" % \
                 datetime.strftime(datetime.now(), "%Y-%m-%d-%H:%M")
-        with open(directory + '/' + fname, 'w+') as f:
+        with open("Kindle.csv", 'w+') as f:
             writer = csv.DictWriter(f, fieldnames=['id', 'type', 'quote', 'source', 'location', 'date']
                                     , extrasaction='ignore')
             writer.writeheader()
@@ -148,12 +148,14 @@ class PushClippings(object):
                 note['id'] = hash
                 note['type'] = note["meta"]["type"]
                 note['quote'] = note["content"]
-                note['source'] = note["title"]
+                note['source'] = note["title"] + " (" + note["author"] + ")"
                 if note["meta"]["page"] is not None:
                     note['location'] = str(note["meta"]["page"]) + " " + str(note["meta"]["location"])
                 else:
                     note['location'] = str(note["meta"]["location"])
+                note['date'] = str(note["added_on"])
                 writer.writerow(note)
+            f.close()
 
     def remove_source(self):
         print "Deleting %s..." % self.source_file
