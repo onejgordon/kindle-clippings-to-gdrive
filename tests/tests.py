@@ -45,7 +45,6 @@ class PushTests(unittest.TestCase):
             text, result_tuple = v
             source, type, location, date = result_tuple
             result = push._parse_note(text)
-            print result
             self.assertIsNotNone(result)
             self.assertEqual(source, result.get('source'))
             self.assertEqual(type, result.get('type'))

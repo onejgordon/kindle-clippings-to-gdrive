@@ -37,8 +37,13 @@ class PushClippings(object):
     def _parse_note(self, raw):
         res = None
         raw = util._normalize_to_ascii(raw)
-        if raw:
-            pattern = r"(?P<source>.*)\n- Your (?P<type>[a-zA-Z]{4,10}) on (?P<location>.*) \| Added on (?P<date>.*)\n\n(?P<quote>.*)"
+        if raw is not None:
+
+            pattern = r"(?P<source>.*)\n- Your " \
+                      r"(?P<type>[a-zA-Z]{4,10}) on " \
+                      r"(?P<location>.*) \| Added on " \
+                      r"(?P<date>.*)\n\n" \
+                      r"(?P<quote>.*)"
             match = re.search(pattern, raw, flags=re.M)
             if match:
                 res = match.groupdict()
