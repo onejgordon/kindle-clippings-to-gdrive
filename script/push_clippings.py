@@ -141,10 +141,18 @@ class PushClippings(object):
         fname = "kindle-notes-loaded-%s.csv" % \
                 datetime.strftime(datetime.now(), "%Y-%m-%d-%H:%M")
         with open(directory + '/' + fname, 'w+') as f:
-            writer = csv.DictWriter(f, fieldnames=['id', 'type', 'quote', 'source', 'location', 'date'])
+            writer = csv.DictWriter(f, fieldnames=['id', 'type', 'quote', 'source', 'location', 'date']
+                                    , extrasaction='ignore')
             writer.writeheader()
-            for hash, note in notes:
+            for hash, note in notes.items():
                 note['id'] = hash
+                note['type'] = note["meta"]["type"]
+                note['quote'] = note["content"]
+                note['source'] = note["title"]
+                if note["meta"]["page"] is not None:
+                    note['location'] = str(note["meta"]["page"]) + " " + str(note["meta"]["location"])
+                else:
+                    note['location'] = str(note["meta"]["location"])
                 writer.writerow(note)
 
     def remove_source(self):

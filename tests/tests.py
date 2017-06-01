@@ -11,6 +11,8 @@ from script.push_clippings import PushClippings
 class PushTests(unittest.TestCase):
     def setUp(self):
         self.clip_datas = None
+        global push
+        push = PushClippings()
 
     def _get_clip_datas(self):
         if not self.clip_datas:
@@ -39,7 +41,6 @@ class PushTests(unittest.TestCase):
     def test_load(self):
         clip_datas = self._get_clip_datas()
         for _clip_data in clip_datas:
-
             # type control
             assert isinstance(_clip_data, dict), "invalid type for clip_data"
 
@@ -50,12 +51,34 @@ class PushTests(unittest.TestCase):
         self.assertEqual(len(clip_datas[3]), 2)
 
     def test_parsing(self):
-        clip_data = self._get_clip_datas()
+        clip_datas = self._get_clip_datas()
 
-        for item in clip_data[0].values():
+        for item in clip_datas[0].values():
             assert (item["title"] in [
                 "The Mythical Man Month",
                 "Two Scoops of Django: Best Practices for Django 1.5"])
+
+        for item in clip_datas[1].values():
+            assert (item["title"] in [
+                "Learning_Python_Fourth_Edition",
+                "Learning_Python_Second_Edition"])
+
+        for item in clip_datas[2].values():
+            assert (item["title"] in [
+                "Regular Expressions Cookbook",
+                "Das Kapital"])
+
+        for item in clip_datas[3].values():
+            assert (item["title"] in ["Dubliners", "Lab Girl"])
+
+    def test_CSV(self):
+        # Need to copy here
+        saveable_data = []
+        clip_datas = self._get_clip_datas()
+        for clip_data in clip_datas:
+            for key, val in clip_data.items():
+                saveable_data.append({key: val})
+        push.save_csv(saveable_data)
 
 
 if __name__ == '__main__':
