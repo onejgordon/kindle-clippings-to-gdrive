@@ -19,7 +19,7 @@ import csv
 from google_credentials_helper import GoogleCredentialHelper
 from config import GOOGLE_SHEET_KEY, INCLUDE_TYPES, SHEET_COLUMNS, \
     TARGET, DELETE_ON_KINDLE_AFTER_UPLOAD, DO_UPLOAD, SAVE_CSV_BACKUP, \
-    DIRECTORY, NOTES_FILE, CSV_OUTPUT_DIR, KINDLE_NOTE_SEP
+    DIRECTORY, NOTES_FILE, CSV_OUTPUT_DIR, KINDLE_NOTE_SEP, DEVICE
 import re
 import os
 import io
@@ -35,13 +35,6 @@ class PushClippings(object):
         self.source_file = file_override if file_override else \
             DIRECTORY + NOTES_FILE
 
-    def _parse_note(self, raw):
-        # Accepts single note, returns parsed single note
-        res = None
-        if raw is not None:
-            res = klip.load(raw)
-        return res
-
     def load_notes_from_kindle(self):
         data = None
         try:
@@ -53,16 +46,16 @@ class PushClippings(object):
             print "Loaded data, length: %d" % len(data)
         return data
 
-    def process_notes(self, raw):
-        processed = {}
-        for i, raw_note in enumerate(raw.split(KINDLE_NOTE_SEP)):
-            note = self._parse_note(raw_note)
-            if note:
-                m = hashlib.md5(note.get('quote'))
-                hash = m.hexdigest()
-                processed[hash] = note
-        print "Processed %d note(s)" % len(processed.keys())
-        return processed
+    @staticmethod
+    def process_notes(raw, kindle=DEVICE):
+        dict = {}
+        processed = klip.load(raw, kindle)
+        for item in processed:
+            item_md5 = hashlib.md5(item["content"])
+            item_hash = item_md5.hexdigest()
+            dict[item_hash] = item
+            print "Processed %d note(s)" % len(dict.keys())
+        return dict
 
     def push_to_gdrive(self, processed_notes):
         print "Fetching existing clippings from Google Drive..."
@@ -85,11 +78,11 @@ class PushClippings(object):
             if DO_UPLOAD:
                 print "Uploading missing clippings to Google Drive..."
                 put_values = []
-                for hash, note in processed_notes.items():
+                for hash, note in processed_notes:
                     if hash in existing_hashes:
                         print "Skipping item already in sheet - %s" % hash
                     else:
-                        _type = note.get('type', '')
+                        _type = note["type"]
                         if _type.lower() in INCLUDE_TYPES:
                             # Space by col indexes?
                             row = [None for x in range(max(SHEET_COLUMNS.values()) + 1)]
@@ -121,16 +114,13 @@ class PushClippings(object):
             encoded = base64.b64encode("%s:%s" % (FLOW_USER_EMAIL, FLOW_USER_PW))
             headers = {"authorization": "Basic %s" % encoded}
             for hash, note in processed_notes.items():
-                _type = note.get('type', '')
+                _type = note["type"]
                 if _type.lower() in INCLUDE_TYPES:
-                    date = note.get('date')
-                    if date:
-                        date = util.iso_date(date)
                     params = {
-                        'source': note.get('source'),
-                        'content': note.get('quote'),
-                        'location': note.get('location'),
-                        'date': date
+                        'source': note["title"],
+                        'content': note["content"],
+                        'location': note["page"],
+                        'date': note["added_on"]
                     }
                     r = requests.post("http://flowdash.co/api/quote",
                                       params=params,
@@ -153,7 +143,7 @@ class PushClippings(object):
         with open(directory + '/' + fname, 'w+') as f:
             writer = csv.DictWriter(f, fieldnames=['id', 'type', 'quote', 'source', 'location', 'date'])
             writer.writeheader()
-            for hash, note in notes.items():
+            for hash, note in notes:
                 note['id'] = hash
                 writer.writerow(note)
 
@@ -191,7 +181,7 @@ if __name__ == "__main__":
         if opt == '-h':
             print HELP
             sys.exit()
-        elif opt in ("-f", "--file") and arg:
+        elif opt in ("-f.json", "--file") and arg:
             file_override = arg
 
     push = PushClippings(file_override=file_override)
