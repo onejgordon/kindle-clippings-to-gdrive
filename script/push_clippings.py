@@ -12,22 +12,21 @@ TODO: Dont distribute client_secrets
 
 '''
 
-import hashlib
-import klip
-from datetime import datetime
-import csv
-from google_credentials_helper import GoogleCredentialHelper
-from config import GOOGLE_SHEET_KEY, INCLUDE_TYPES, SHEET_COLUMNS, \
-    TARGET, DELETE_ON_KINDLE_AFTER_UPLOAD, DO_UPLOAD, SAVE_CSV_BACKUP, \
-    DIRECTORY, NOTES_FILE, CSV_OUTPUT_DIR, KINDLE_NOTE_SEP, DEVICE
-import re
-import os
-import io
-import sys
-import getopt
-import util
-import requests
 import base64
+import csv
+import getopt
+import hashlib
+import io
+import os
+import sys
+from datetime import datetime
+
+import klip
+import requests
+
+from config import GOOGLE_SHEET_KEY, INCLUDE_TYPES, SHEET_COLUMNS, \
+    TARGET, DO_UPLOAD, DIRECTORY, NOTES_FILE, CSV_OUTPUT_DIR, DEVICE
+from google_credentials_helper import GoogleCredentialHelper
 
 
 class PushClippings(object):

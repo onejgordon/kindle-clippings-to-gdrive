@@ -1,18 +1,13 @@
 # -*- coding: utf-8 -*-
 import csv
-import hashlib
 import os
+import shutil
 import unittest
+from collections import defaultdict
 from datetime import datetime
 
-from collections import defaultdict
-
-import shutil
-
-from script.config import CSV_OUTPUT_DIR
-import samples
 import clippings
-from script import config, util
+from script.config import CSV_OUTPUT_DIR
 from script.push_clippings import PushClippings
 
 
