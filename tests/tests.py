@@ -1,7 +1,14 @@
 # -*- coding: utf-8 -*-
+import csv
+import hashlib
 import os
 import unittest
 from datetime import datetime
+
+from collections import defaultdict
+
+import shutil
+
 from script.config import CSV_OUTPUT_DIR
 import samples
 import clippings
@@ -17,6 +24,7 @@ class PushTests(unittest.TestCase):
         push = PushClippings()
 
     def _get_clip_datas(self):
+        #  From https://github.com/coolharsh55/klip
         if not self.clip_datas:
             clip_datas = []
 
@@ -41,6 +49,7 @@ class PushTests(unittest.TestCase):
         return self.clip_datas
 
     def test_load(self):
+        #  From https://github.com/coolharsh55/klip
         clip_datas = self._get_clip_datas()
         for _clip_data in clip_datas:
             # type control
@@ -53,6 +62,7 @@ class PushTests(unittest.TestCase):
         self.assertEqual(len(clip_datas[3]), 2)
 
     def test_parsing(self):
+        # From https://github.com/coolharsh55/klip
         clip_datas = self._get_clip_datas()
 
         for item in clip_datas[0].values():
@@ -74,14 +84,28 @@ class PushTests(unittest.TestCase):
             assert (item["title"] in ["Dubliners", "Lab Girl"])
 
     def test_CSV(self):
-        # Need to copy here
         clip_datas = self._get_clip_datas()
         push.save_csv(clip_datas[0])
         file_name = CSV_OUTPUT_DIR + "\kindle-notes-loaded-%s.csv" % datetime.strftime(datetime.now(), "%Y-%m-%d-%H-%M")
 
-        assert (os.path.isfile(file_name), "CSV not saved correctly.")
-        assert (os.path.getsize(file_name) > 0, "CSV saved but empty.")
+        self.assertTrue(os.path.isfile(file_name), "CSV not saved correctly.")
+        self.assertTrue(os.path.getsize(file_name) > 0, "CSV saved but empty.")
 
+        columns = defaultdict(list)
+
+        # From https://stackoverflow.com/a/16503661/1649917
+        with open(file_name) as csv_file:
+            reader = csv.DictReader(csv_file)
+            for row in reader:
+                for (k, v) in row.items():
+                    columns[k].append(v)
+
+        for count, item in enumerate(clip_datas[0]):
+            # Check all ID's are in file.
+            self.assertTrue(columns['id'][count] == item)
+
+        # Delete created CSV files
+        shutil.rmtree(CSV_OUTPUT_DIR)
 
 
 if __name__ == '__main__':

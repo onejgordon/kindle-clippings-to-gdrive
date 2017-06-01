@@ -143,7 +143,7 @@ class PushClippings(object):
         file_name = directory + "\kindle-notes-loaded-%s.csv" % datetime.strftime(datetime.now(), "%Y-%m-%d-%H-%M")
         with open(file_name, 'w+') as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=['id', 'type', 'quote', 'source', 'location', 'date'],
-                                    extrasaction='ignore')
+                                    extrasaction='ignore', lineterminator='\n')
             writer.writeheader()
             for md5_hash, note in notes.items():
                 note['id'] = md5_hash
