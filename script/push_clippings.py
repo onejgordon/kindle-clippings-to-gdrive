@@ -13,6 +13,7 @@ TODO: Dont distribute client_secrets
 '''
 
 import hashlib
+import klip
 from datetime import datetime
 import csv
 from google_credentials_helper import GoogleCredentialHelper
@@ -35,23 +36,10 @@ class PushClippings(object):
             DIRECTORY + NOTES_FILE
 
     def _parse_note(self, raw):
+        # Accepts single note, returns parsed single note
         res = None
-        raw = util._normalize_to_ascii(raw)
         if raw is not None:
-
-            pattern = r"(?P<source>.*)\n- Your " \
-                      r"(?P<type>[a-zA-Z]{4,10}) on " \
-                      r"(?P<location>.*) \| Added on " \
-                      r"(?P<date>.*)\n\n" \
-                      r"(?P<quote>.*)"
-            match = re.search(pattern, raw, flags=re.M)
-            if match:
-                res = match.groupdict()
-                raw_date = res.get('date')
-                if raw_date:
-                    res['date'] = util.parse_kindle_time(raw_date)
-            else:
-                print "No pattern match in note"
+            res = klip.load(raw)
         return res
 
     def load_notes_from_kindle(self):

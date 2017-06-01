@@ -21,21 +21,23 @@ class PushTests(unittest.TestCase):
     def test_parsing_notes(self):
         volley = [
             (
-                samples.SU_1,
+                samples.HIGHLIGHT,
                 (
                     "Surfing Uncertainty: Prediction, Action, and the Embodied Mind (Clark, Andy)",
                     "Highlight",
                     "page 70 | Location 1613-1616",
-                    "2016-04-13 22:39:18"
+                    "2016-04-13 22:39:18",
+                    406
                 )
             ),
             (
-                samples.SOTHB_1,
+                samples.NOTE,
                 (
-                    "The Story of the Human Body (Daniel Lieberman)",
-                    "Highlight",
-                    "Location 2479-2481",
-                    "2017-01-03 17:54:18"
+                    "Regular Expressions Cookbook (Jan Goyvaerts and Steven Levithan)",
+                    "Note",
+                    "Page 41 | Location 391",
+                    "2013-11-27 10:52:55",
+                    27
                 )
             )
 
