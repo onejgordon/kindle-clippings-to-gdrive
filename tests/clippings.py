@@ -1,4 +1,5 @@
 # coding=utf-8
+# All from https://github.com/coolharsh55/klip
 Kindle4 = """Dubliners (James Joyce)
 - Highlight Loc. 563-64  | Added on Saturday, 29 April 17 21:23:29 GMT-02:23
 
