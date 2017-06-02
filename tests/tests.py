@@ -24,19 +24,19 @@ class PushTests(unittest.TestCase):
             clip_datas = []
 
             # kindle paperwhite
-            clip_data = PushClippings.process_notes(raw=clippings.Paperwhite, kindle="Paperwhite")
+            clip_data = push.process_notes(raw=clippings.Paperwhite, kindle="Paperwhite")
             clip_datas.append(clip_data)
 
             # old gen kindles
-            clip_data = PushClippings.process_notes(raw=clippings.OldGenKindle, kindle="OldGenKindle")
+            clip_data = push.process_notes(raw=clippings.OldGenKindle, kindle="OldGenKindle")
             clip_datas.append(clip_data)
 
             # kindle touch
-            clip_data = PushClippings.process_notes(raw=clippings.Touch, kindle="Touch")
+            clip_data = push.process_notes(raw=clippings.Touch, kindle="Touch")
             clip_datas.append(clip_data)
 
             # kindle 4
-            clip_data = PushClippings.process_notes(raw=clippings.Kindle4, kindle="Kindle4")
+            clip_data = push.process_notes(raw=clippings.Kindle4, kindle="Kindle4")
             clip_datas.append(clip_data)
 
             self.clip_datas = clip_datas
@@ -79,36 +79,37 @@ class PushTests(unittest.TestCase):
             assert (item["title"] in ["Dubliners", "Lab Girl"])
 
     def test_CSV(self):
+        # Create new dict and get all device clippings
+        all_clippings = {}
         clip_datas = self._get_clip_datas()
-        push.save_csv(clip_datas[0])
+
+        # Copy all device clippings to new dict
+        for clip_data in clip_datas:
+            all_clippings.update(clip_data)
+
+        # Process all device clippings
+        push.save_csv(all_clippings)
+
         file_name = CSV_OUTPUT_DIR + "\kindle-notes-loaded-%s.csv" % datetime.strftime(datetime.now(), "%Y-%m-%d-%H-%M")
 
+        # Check that file is created
         self.assertTrue(os.path.isfile(file_name), "CSV not saved correctly.")
         self.assertTrue(os.path.getsize(file_name) > 0, "CSV saved but empty.")
 
+        # Check CSV file is written correctly From https://stackoverflow.com/a/16503661/1649917
         columns = defaultdict(list)
-
-        # From https://stackoverflow.com/a/16503661/1649917
         with open(file_name) as csv_file:
             reader = csv.DictReader(csv_file)
             for row in reader:
                 for (k, v) in row.items():
                     columns[k].append(v)
 
-        for count, item in enumerate(clip_datas[0]):
-            # Check all ID's are in file.
-            self.assertTrue(columns['id'][count] == item)
+        # Check all ID's are in file.
+        for count, item in enumerate(all_clippings):
+            self.assertTrue(columns['id'][count] == item, "Data not saved correctly")
 
         # Delete created CSV files
         shutil.rmtree(CSV_OUTPUT_DIR)
-
-    def test_gdrive(self):
-        clip_datas = self._get_clip_datas()
-        push.push_to_gdrive(clip_datas[0])
-
-    def test_flow(self):
-        clip_datas = self._get_clip_datas()
-        push.save_to_flow(clip_datas[0])
 
 
 if __name__ == '__main__':
