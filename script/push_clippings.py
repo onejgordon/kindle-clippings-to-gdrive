@@ -25,7 +25,7 @@ import klip
 import requests
 
 from config import GOOGLE_SHEET_KEY, INCLUDE_TYPES, SHEET_COLUMNS, \
-    TARGET, DO_UPLOAD, DIRECTORY, NOTES_FILE, CSV_OUTPUT_DIR, DEVICE
+    TARGET, DO_UPLOAD, DIRECTORY, NOTES_FILE, CSV_OUTPUT_DIR, DEVICE, SAVE_CSV_BACKUP, DELETE_ON_KINDLE_AFTER_UPLOAD
 from google_credentials_helper import GoogleCredentialHelper
 
 
@@ -46,8 +46,7 @@ class PushClippings(object):
             print "Loaded data, length: %d" % len(data)
         return data
 
-    @staticmethod
-    def process_notes(raw, kindle=DEVICE):
+    def process_notes(self, raw, kindle=DEVICE):
         dict = {}
         processed = klip.load(raw, kindle)
         for item in processed:
@@ -79,10 +78,10 @@ class PushClippings(object):
                 print "Uploading missing clippings to Google Drive..."
                 put_values = []
 
-                # transfigure here
-                transfigured_notes = self.transfigure_notes(processed_notes)
+                # Map from klip to drive here
+                mapped_notes = self.map_from_klip(processed_notes)
 
-                for md5_hash, note in transfigured_notes.items():
+                for md5_hash, note in mapped_notes.items():
                     if md5_hash in existing_hashes:
                         print "Skipping item already in sheet - %s" % md5_hash
                     else:
@@ -117,13 +116,17 @@ class PushClippings(object):
             from config import FLOW_USER_EMAIL, FLOW_USER_PW
             encoded = base64.b64encode("%s:%s" % (FLOW_USER_EMAIL, FLOW_USER_PW))
             headers = {"authorization": "Basic %s" % encoded}
-            for hash, note in processed_notes.items():
+
+            # Map from klip to flow here
+            mapped_notes = self.map_from_klip(processed_notes)
+
+            for md5_hash, note in mapped_notes.items():
                 _type = note["type"]
                 if _type.lower() in INCLUDE_TYPES:
                     params = {
                         'source': note["title"],
                         'content': note["content"],
-                        'location': note["page"],
+                        'location': note["location"],
                         'date': note["added_on"]
                     }
                     r = requests.post("http://flowdash.co/api/quote",
@@ -138,7 +141,7 @@ class PushClippings(object):
                                 print "Successfully uploaded quote to Flow with id %s" % q.get('id')
             print "Updated %s row(s)!" % successful
 
-    def save_csv(self, notes):
+    def save_csv(self, mapped_notes):
         directory = CSV_OUTPUT_DIR
 
         if not os.path.exists(directory):
@@ -149,11 +152,11 @@ class PushClippings(object):
             writer = csv.DictWriter(csv_file, fieldnames=['id', 'type', 'quote', 'source', 'location', 'date'],
                                     extrasaction='ignore', lineterminator='\n')
             writer.writeheader()
-            # Map to current params
-            notes = self.transfigure_notes(notes)
+            # Map from klip to csv
+            mapped_notes = self.map_from_klip(mapped_notes)
 
             # Save to CSV
-            for md5_hash, note in notes.items():
+            for md5_hash, note in mapped_notes.items():
                 writer.writerow(note)
             csv_file.close()
 
@@ -162,7 +165,8 @@ class PushClippings(object):
         os.remove(self.source_file)
         print "Deleted."
 
-    def transfigure_notes(self, processed_notes):
+    def map_from_klip(self, processed_notes):
+        # Changes notes from klip params to script params
         for md5_hash, note in processed_notes.items():
             note['id'] = md5_hash
             note['type'] = note["meta"]["type"]
@@ -183,9 +187,9 @@ class PushClippings(object):
                 self.push_to_gdrive(processed_notes)
             elif TARGET == "flow":
                 self.save_to_flow(processed_notes)
-            if self.SAVE_CSV_BACKUP:
+            if SAVE_CSV_BACKUP:
                 self.save_csv(processed_notes)
-            if self.DELETE_ON_KINDLE_AFTER_UPLOAD:
+            if DELETE_ON_KINDLE_AFTER_UPLOAD:
                 self.remove_source()
         print "Done"
 

@@ -106,6 +106,10 @@ class PushTests(unittest.TestCase):
         clip_datas = self._get_clip_datas()
         push.push_to_gdrive(clip_datas[0])
 
+    def test_flow(self):
+        clip_datas = self._get_clip_datas()
+        push.save_to_flow(clip_datas[0])
+
 
 if __name__ == '__main__':
     unittest.main()
