@@ -29,6 +29,7 @@ from config import GOOGLE_SHEET_KEY, INCLUDE_TYPES, SHEET_COLUMNS, \
 from google_credentials_helper import GoogleCredentialHelper
 
 
+# noinspection SpellCheckingInspection
 class PushClippings(object):
     def __init__(self, file_override=None):
         self.source_file = file_override if file_override else \
@@ -61,7 +62,7 @@ class PushClippings(object):
         # Read from quote sheet to get all hashes
         ghelper = GoogleCredentialHelper('sheets', 'v4')
         service = ghelper.get_service()
-        if service:
+        if service is not None:
             result = service.spreadsheets().values().get(
                 spreadsheetId=GOOGLE_SHEET_KEY,
                 majorDimension="COLUMNS",
@@ -69,7 +70,7 @@ class PushClippings(object):
             # Write missing hashes to spreadsheet
             existing_hashes = []
             values = result.get('values')
-            if values:
+            if values is not None:
                 rows = values[0]
                 n_rows = len(rows) - 1
                 if n_rows > 0:
@@ -77,19 +78,23 @@ class PushClippings(object):
             if DO_UPLOAD:
                 print "Uploading missing clippings to Google Drive..."
                 put_values = []
-                for hash, note in processed_notes:
-                    if hash in existing_hashes:
-                        print "Skipping item already in sheet - %s" % hash
+
+                # transfigure here
+                transfigured_notes = self.transfigure_notes(processed_notes)
+
+                for md5_hash, note in transfigured_notes.items():
+                    if md5_hash in existing_hashes:
+                        print "Skipping item already in sheet - %s" % md5_hash
                     else:
                         _type = note["type"]
                         if _type.lower() in INCLUDE_TYPES:
                             # Space by col indexes?
                             row = [None for x in range(max(SHEET_COLUMNS.values()) + 1)]
-                            for prop, index in SHEET_COLUMNS.items():
-                                if prop == 'hash':
-                                    row[index] = hash
+                            for column_property, index in SHEET_COLUMNS.items():
+                                if column_property == 'hash':
+                                    row[index] = md5_hash
                                 else:
-                                    row[index] = note.get(prop)
+                                    row[index] = note.get(column_property)
                             put_values.append(row)
                 if put_values:
                     body = {
@@ -144,16 +149,11 @@ class PushClippings(object):
             writer = csv.DictWriter(csv_file, fieldnames=['id', 'type', 'quote', 'source', 'location', 'date'],
                                     extrasaction='ignore', lineterminator='\n')
             writer.writeheader()
+            # Map to current params
+            notes = self.transfigure_notes(notes)
+
+            # Save to CSV
             for md5_hash, note in notes.items():
-                note['id'] = md5_hash
-                note['type'] = note["meta"]["type"]
-                note['quote'] = note["content"]
-                note['source'] = note["title"] + " (" + note["author"] + ")"
-                if note["meta"]["page"] is not None:
-                    note['location'] = str(note["meta"]["page"]) + " " + str(note["meta"]["location"])
-                else:
-                    note['location'] = str(note["meta"]["location"])
-                note['date'] = str(note["added_on"])
                 writer.writerow(note)
             csv_file.close()
 
@@ -161,6 +161,19 @@ class PushClippings(object):
         print "Deleting %s..." % self.source_file
         os.remove(self.source_file)
         print "Deleted."
+
+    def transfigure_notes(self, processed_notes):
+        for md5_hash, note in processed_notes.items():
+            note['id'] = md5_hash
+            note['type'] = note["meta"]["type"]
+            note['quote'] = note["content"]
+            note['source'] = note["title"] + " (" + note["author"] + ")"
+            if note["meta"]["page"] is not None:
+                note['location'] = str(note["meta"]["page"]) + " " + str(note["meta"]["location"])
+            else:
+                note['location'] = str(note["meta"]["location"])
+            note['date'] = str(note["added_on"])
+        return processed_notes
 
     def run(self):
         raw_notes = self.load_notes_from_kindle()

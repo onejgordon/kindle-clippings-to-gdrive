@@ -29,9 +29,11 @@ pip install -r requirements.txt
 
 You'll need Google API project to authenticate the calls to Google Sheets.
 
-Go to https://console.developers.google.com to create your project.
+Go to [this wizard](https://console.developers.google.com/start/api?id=sheets.googleapis.com) to create your project.
 
 Create an oauth2 credential, and download the client_secret.json file to the main directory.
+
+For more detailed instructions follow [these](https://developers.google.com/sheets/api/quickstart/python#step_1_turn_on_the_api_name) steps
 
 #### Create your Spreadsheet
 

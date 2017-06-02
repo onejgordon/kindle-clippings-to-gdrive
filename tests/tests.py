@@ -102,6 +102,10 @@ class PushTests(unittest.TestCase):
         # Delete created CSV files
         shutil.rmtree(CSV_OUTPUT_DIR)
 
+    def test_gdrive(self):
+        clip_datas = self._get_clip_datas()
+        push.push_to_gdrive(clip_datas[0])
+
 
 if __name__ == '__main__':
     unittest.main()
