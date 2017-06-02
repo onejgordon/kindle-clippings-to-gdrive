@@ -24,6 +24,7 @@ from datetime import datetime
 import klip
 import requests
 
+import util
 from config import GOOGLE_SHEET_KEY, INCLUDE_TYPES, SHEET_COLUMNS, \
     TARGET, DO_UPLOAD, DIRECTORY, NOTES_FILE, CSV_OUTPUT_DIR, DEVICE, SAVE_CSV_BACKUP, DELETE_ON_KINDLE_AFTER_UPLOAD
 from google_credentials_helper import GoogleCredentialHelper
@@ -48,6 +49,7 @@ class PushClippings(object):
 
     def process_notes(self, raw, kindle=DEVICE):
         dict = {}
+        raw = util._normalize_to_ascii(raw)
         processed = klip.load(raw, kindle)
         for item in processed:
             item_md5 = hashlib.md5(item["content"])
@@ -141,7 +143,7 @@ class PushClippings(object):
                                 print "Successfully uploaded quote to Flow with id %s" % q.get('id')
             print "Updated %s row(s)!" % successful
 
-    def save_csv(self, mapped_notes):
+    def save_csv(self, processed_notes):
         directory = CSV_OUTPUT_DIR
 
         if not os.path.exists(directory):
@@ -153,7 +155,7 @@ class PushClippings(object):
                                     extrasaction='ignore', lineterminator='\n')
             writer.writeheader()
             # Map from klip to csv
-            mapped_notes = self.map_from_klip(mapped_notes)
+            mapped_notes = self.map_from_klip(processed_notes)
 
             # Save to CSV
             for md5_hash, note in mapped_notes.items():
@@ -173,7 +175,7 @@ class PushClippings(object):
             note['quote'] = note["content"]
             note['source'] = note["title"] + " (" + note["author"] + ")"
             if note["meta"]["page"] is not None:
-                note['location'] = str(note["meta"]["page"]) + " " + str(note["meta"]["location"])
+                note['location'] = str("Page " + str(note["meta"]["page"]) + " | Location " + str(note["meta"]["location"]))
             else:
                 note['location'] = str(note["meta"]["location"])
             note['date'] = str(note["added_on"])
@@ -187,6 +189,8 @@ class PushClippings(object):
                 self.push_to_gdrive(processed_notes)
             elif TARGET == "flow":
                 self.save_to_flow(processed_notes)
+            elif TARGET =="csv":
+                self.save_csv(processed_notes)
             if SAVE_CSV_BACKUP:
                 self.save_csv(processed_notes)
             if DELETE_ON_KINDLE_AFTER_UPLOAD:
