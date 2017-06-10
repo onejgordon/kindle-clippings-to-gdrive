@@ -178,9 +178,9 @@ class PushClippings(object):
                 self.push_to_gdrive(processed_notes)
             elif TARGET == "flow":
                 self.save_to_flow(processed_notes)
-            if self.SAVE_CSV_BACKUP:
+            if SAVE_CSV_BACKUP:
                 self.save_csv(processed_notes)
-            if self.DELETE_ON_KINDLE_AFTER_UPLOAD:
+            if DELETE_ON_KINDLE_AFTER_UPLOAD:
                 self.remove_source()
         print "Done"
 
