@@ -140,7 +140,7 @@ class PushClippings(object):
                         'location': note.get('location'),
                         'date': date
                     }
-                    r = requests.post("http://flowdash.co/api/quote",
+                    r = requests.post("https://flowdash.co/api/quote",
                                       params=params,
                                       headers=headers)
                     if r.status_code == 200:
@@ -151,7 +151,6 @@ class PushClippings(object):
                             if q:
                                 print "Successfully uploaded quote to Flow with id %s" % q.get('id')
             print "Updated %s row(s)!" % successful
-
 
     def save_csv(self, notes):
         directory = CSV_OUTPUT_DIR
