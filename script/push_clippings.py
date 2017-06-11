@@ -131,7 +131,7 @@ class PushClippings(object):
                         'location': note["location"],
                         'date': note["added_on"]
                     }
-                    r = requests.post("http://flowdash.co/api/quote",
+                    r = requests.post("https://flowdash.co/api/quote",
                                       params=params,
                                       headers=headers)
                     if r.status_code == 200:
