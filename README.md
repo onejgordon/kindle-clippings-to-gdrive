@@ -55,3 +55,9 @@ Each time you want to save notes from your kindle, plug it in and run:
 ```
 python push_clippings.py
 ```
+
+## Tests
+
+To run tests:
+
+`python -m unittest discover -s tests`
