@@ -4,8 +4,7 @@
 Configuration settings
 '''
 
-TARGET = "csv"  # Either "flow" or "gsheet" or "csv"
-SAVE_CSV_BACKUP = True
+TARGET = "gsheet"  # Either "flow" or "gsheet" or "csv"
 CSV_OUTPUT_DIR = "output"
 DO_UPLOAD = True
 DELETE_ON_KINDLE_AFTER_UPLOAD = False

@@ -4,11 +4,9 @@
 push_clippings.py
 
 Collect notes/highlights/bookmarks from Kindle (attached via USB) to
-a Google Spreadsheet, and optionally save CSV on local machine
+a Google Spreadsheet, CSV, or to Flow Dashboard (flowdash.co)
 
 Supports: highlights, notes
-
-TODO: Dont distribute client_secrets
 
 '''
 
@@ -26,7 +24,7 @@ import requests
 
 import util
 from config import GOOGLE_SHEET_KEY, INCLUDE_TYPES, SHEET_COLUMNS, \
-    TARGET, DO_UPLOAD, DIRECTORY, NOTES_FILE, CSV_OUTPUT_DIR, DEVICE, SAVE_CSV_BACKUP, DELETE_ON_KINDLE_AFTER_UPLOAD
+    TARGET, DO_UPLOAD, DIRECTORY, NOTES_FILE, CSV_OUTPUT_DIR, DEVICE, DELETE_ON_KINDLE_AFTER_UPLOAD
 from google_credentials_helper import GoogleCredentialHelper
 
 
@@ -189,9 +187,7 @@ class PushClippings(object):
                 self.push_to_gdrive(processed_notes)
             elif TARGET == "flow":
                 self.save_to_flow(processed_notes)
-            elif TARGET =="csv":
-                self.save_csv(processed_notes)
-            if SAVE_CSV_BACKUP:
+            elif TARGET == "csv":
                 self.save_csv(processed_notes)
             if DELETE_ON_KINDLE_AFTER_UPLOAD:
                 self.remove_source()
