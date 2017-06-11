@@ -12,43 +12,29 @@ TODO: Dont distribute client_secrets
 
 '''
 
-import hashlib
-from datetime import datetime
-import csv
-from google_credentials_helper import GoogleCredentialHelper
-from config import GOOGLE_SHEET_KEY, INCLUDE_TYPES, SHEET_COLUMNS, \
-    TARGET, DELETE_ON_KINDLE_AFTER_UPLOAD, DO_UPLOAD, SAVE_CSV_BACKUP, \
-    DIRECTORY, NOTES_FILE, CSV_OUTPUT_DIR, KINDLE_NOTE_SEP
-import re
-import os
-import io
-import sys
-import getopt
-import util
-import requests
 import base64
+import csv
+import getopt
+import hashlib
+import io
+import os
+import sys
+from datetime import datetime
+
+import klip
+import requests
+
+import util
+from config import GOOGLE_SHEET_KEY, INCLUDE_TYPES, SHEET_COLUMNS, \
+    TARGET, DO_UPLOAD, DIRECTORY, NOTES_FILE, CSV_OUTPUT_DIR, DEVICE, SAVE_CSV_BACKUP, DELETE_ON_KINDLE_AFTER_UPLOAD
+from google_credentials_helper import GoogleCredentialHelper
 
 
+# noinspection SpellCheckingInspection
 class PushClippings(object):
-
     def __init__(self, file_override=None):
         self.source_file = file_override if file_override else \
             DIRECTORY + NOTES_FILE
-
-    def _parse_note(self, raw):
-        res = None
-        raw = util._normalize_to_ascii(raw)
-        if raw:
-            pattern = r"(?P<source>.*)\n- Your (?P<type>[a-zA-Z]{4,10}) on (?P<location>.*) \| Added on (?P<date>.*)\n\n(?P<quote>.*)"
-            match = re.search(pattern, raw, flags=re.M)
-            if match:
-                res = match.groupdict()
-                raw_date = res.get('date')
-                if raw_date:
-                    res['date'] = util.parse_kindle_time(raw_date)
-            else:
-                print "No pattern match in note"
-        return res
 
     def load_notes_from_kindle(self):
         data = None
@@ -61,23 +47,23 @@ class PushClippings(object):
             print "Loaded data, length: %d" % len(data)
         return data
 
-    def process_notes(self, raw):
-        processed = {}
-        for i, raw_note in enumerate(raw.split(KINDLE_NOTE_SEP)):
-            note = self._parse_note(raw_note)
-            if note:
-                m = hashlib.md5(note.get('quote'))
-                hash = m.hexdigest()
-                processed[hash] = note
-        print "Processed %d note(s)" % len(processed.keys())
-        return processed
+    def process_notes(self, raw, kindle=DEVICE):
+        dict = {}
+        raw = util._normalize_to_ascii(raw)
+        processed = klip.load(raw, kindle)
+        for item in processed:
+            item_md5 = hashlib.md5(item["content"])
+            item_hash = item_md5.hexdigest()
+            dict[item_hash] = item
+            print "Processed %d note(s)" % len(dict.keys())
+        return dict
 
     def push_to_gdrive(self, processed_notes):
         print "Fetching existing clippings from Google Drive..."
         # Read from quote sheet to get all hashes
         ghelper = GoogleCredentialHelper('sheets', 'v4')
         service = ghelper.get_service()
-        if service:
+        if service is not None:
             result = service.spreadsheets().values().get(
                 spreadsheetId=GOOGLE_SHEET_KEY,
                 majorDimension="COLUMNS",
@@ -85,7 +71,7 @@ class PushClippings(object):
             # Write missing hashes to spreadsheet
             existing_hashes = []
             values = result.get('values')
-            if values:
+            if values is not None:
                 rows = values[0]
                 n_rows = len(rows) - 1
                 if n_rows > 0:
@@ -93,23 +79,27 @@ class PushClippings(object):
             if DO_UPLOAD:
                 print "Uploading missing clippings to Google Drive..."
                 put_values = []
-                for hash, note in processed_notes.items():
-                    if hash in existing_hashes:
-                        print "Skipping item already in sheet - %s" % hash
+
+                # Map from klip to drive here
+                mapped_notes = self.map_from_klip(processed_notes)
+
+                for md5_hash, note in mapped_notes.items():
+                    if md5_hash in existing_hashes:
+                        print "Skipping item already in sheet - %s" % md5_hash
                     else:
-                        _type = note.get('type', '')
+                        _type = note["type"]
                         if _type.lower() in INCLUDE_TYPES:
                             # Space by col indexes?
                             row = [None for x in range(max(SHEET_COLUMNS.values()) + 1)]
-                            for prop, index in SHEET_COLUMNS.items():
-                                if prop == 'hash':
-                                    row[index] = hash
+                            for column_property, index in SHEET_COLUMNS.items():
+                                if column_property == 'hash':
+                                    row[index] = md5_hash
                                 else:
-                                    row[index] = note.get(prop)
+                                    row[index] = note.get(column_property)
                             put_values.append(row)
                 if put_values:
                     body = {
-                      'values': put_values
+                        'values': put_values
                     }
                     result = service.spreadsheets().values().append(
                         spreadsheetId=GOOGLE_SHEET_KEY,
@@ -128,17 +118,18 @@ class PushClippings(object):
             from config import FLOW_USER_EMAIL, FLOW_USER_PW
             encoded = base64.b64encode("%s:%s" % (FLOW_USER_EMAIL, FLOW_USER_PW))
             headers = {"authorization": "Basic %s" % encoded}
-            for hash, note in processed_notes.items():
-                _type = note.get('type', '')
+
+            # Map from klip to flow here
+            mapped_notes = self.map_from_klip(processed_notes)
+
+            for md5_hash, note in mapped_notes.items():
+                _type = note["type"]
                 if _type.lower() in INCLUDE_TYPES:
-                    date = note.get('date')
-                    if date:
-                        date = util.iso_date(date)
                     params = {
-                        'source': note.get('source'),
-                        'content': note.get('quote'),
-                        'location': note.get('location'),
-                        'date': date
+                        'source': note["title"],
+                        'content': note["content"],
+                        'location': note["location"],
+                        'date': note["added_on"]
                     }
                     r = requests.post("https://flowdash.co/api/quote",
                                       params=params,
@@ -152,23 +143,43 @@ class PushClippings(object):
                                 print "Successfully uploaded quote to Flow with id %s" % q.get('id')
             print "Updated %s row(s)!" % successful
 
-    def save_csv(self, notes):
+    def save_csv(self, processed_notes):
         directory = CSV_OUTPUT_DIR
+
         if not os.path.exists(directory):
             os.makedirs(directory)
-        fname = "kindle-notes-loaded-%s.csv" % \
-            datetime.strftime(datetime.now(), "%Y-%m-%d-%H:%M")
-        with open(directory + '/' + fname, 'w+') as f:
-            writer = csv.DictWriter(f, fieldnames=['id', 'type', 'quote', 'source', 'location', 'date'])
+
+        file_name = directory + "\kindle-notes-loaded-%s.csv" % datetime.strftime(datetime.now(), "%Y-%m-%d-%H-%M")
+        with open(file_name, 'w+') as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=['id', 'type', 'quote', 'source', 'location', 'date'],
+                                    extrasaction='ignore', lineterminator='\n')
             writer.writeheader()
-            for hash, note in notes.items():
-                note['id'] = hash
+            # Map from klip to csv
+            mapped_notes = self.map_from_klip(processed_notes)
+
+            # Save to CSV
+            for md5_hash, note in mapped_notes.items():
                 writer.writerow(note)
+            csv_file.close()
 
     def remove_source(self):
         print "Deleting %s..." % self.source_file
         os.remove(self.source_file)
         print "Deleted."
+
+    def map_from_klip(self, processed_notes):
+        # Changes notes from klip params to script params
+        for md5_hash, note in processed_notes.items():
+            note['id'] = md5_hash
+            note['type'] = note["meta"]["type"]
+            note['quote'] = note["content"]
+            note['source'] = note["title"] + " (" + note["author"] + ")"
+            if note["meta"]["page"] is not None:
+                note['location'] = str("Page " + str(note["meta"]["page"]) + " | Location " + str(note["meta"]["location"]))
+            else:
+                note['location'] = str(note["meta"]["location"])
+            note['date'] = str(note["added_on"])
+        return processed_notes
 
     def run(self):
         raw_notes = self.load_notes_from_kindle()
@@ -178,6 +189,8 @@ class PushClippings(object):
                 self.push_to_gdrive(processed_notes)
             elif TARGET == "flow":
                 self.save_to_flow(processed_notes)
+            elif TARGET =="csv":
+                self.save_csv(processed_notes)
             if SAVE_CSV_BACKUP:
                 self.save_csv(processed_notes)
             if DELETE_ON_KINDLE_AFTER_UPLOAD:
@@ -199,9 +212,8 @@ if __name__ == "__main__":
         if opt == '-h':
             print HELP
             sys.exit()
-        elif opt in ("-f", "--file") and arg:
+        elif opt in ("-f.json", "--file") and arg:
             file_override = arg
 
     push = PushClippings(file_override=file_override)
     push.run()
-

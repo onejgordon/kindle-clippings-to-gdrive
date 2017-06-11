@@ -4,7 +4,7 @@
 Configuration settings
 '''
 
-TARGET = "gsheet"  # Either "flow" or "gsheet"
+TARGET = "csv"  # Either "flow" or "gsheet" or "csv"
 SAVE_CSV_BACKUP = True
 CSV_OUTPUT_DIR = "output"
 DO_UPLOAD = True
@@ -29,5 +29,6 @@ SHEET_COLUMNS = {
 # Things you may have to change depending on Kindle and OS version
 DIRECTORY = "/Volumes/Kindle/documents/"
 NOTES_FILE = "My Clippings.txt"
-KINDLE_NOTE_SEP = "=========="
+DEVICE = "Paperwhite"  # ['OldGenKindle', 'Kindle4', 'Touch', 'Paperwhite'] Use OldGenKindle for Kindle 1-3
+
 
